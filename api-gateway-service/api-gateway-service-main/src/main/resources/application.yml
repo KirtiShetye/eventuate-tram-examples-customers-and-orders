@@ -12,10 +12,10 @@ apigateway.timeout.millis: 1000
 
 customer:
   destinations:
-    customerServiceUrl: http://${DOCKER_HOST_IP:localhost}:8082
+    customerServiceUrl: http://${DOCKER_HOST_IP:localhost}:8081
 order:
   destinations:
-    orderServiceUrl: http://${DOCKER_HOST_IP:localhost}:8081
+    orderServiceUrl: http://${DOCKER_HOST_IP:localhost}:8082
 orderhistory:
   destinations:
     orderHistoryServiceUrl: http://${DOCKER_HOST_IP:localhost}:8083
