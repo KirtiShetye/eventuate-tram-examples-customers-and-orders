@@ -61,3 +61,14 @@ services:
       EVENTUATE_CDC_READER_READER1_OFFSETSTOREKEY: MySqlBinlog
       EVENTUATE_CDC_READER_READER1_MONITORINGSCHEMA: eventuate
       EVENTUATE_CDC_READER_READER1_OUTBOXID: 1
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - 8090:8080
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
