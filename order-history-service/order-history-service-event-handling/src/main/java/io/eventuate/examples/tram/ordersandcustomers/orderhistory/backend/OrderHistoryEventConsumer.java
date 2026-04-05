@@ -5,6 +5,7 @@ import io.eventuate.examples.tram.ordersandcustomers.orders.domain.OrderApproved
 import io.eventuate.examples.tram.ordersandcustomers.orders.domain.OrderCancelledEvent;
 import io.eventuate.examples.tram.ordersandcustomers.orders.domain.OrderCreatedEvent;
 import io.eventuate.examples.tram.ordersandcustomers.orders.domain.OrderRejectedEvent;
+import io.eventuate.examples.tram.ordersandcustomers.orders.domain.OrderShippedEvent;
 import io.eventuate.tram.events.subscriber.DomainEventEnvelope;
 import io.eventuate.tram.events.subscriber.annotations.EventuateDomainEventHandler;
 
@@ -49,6 +50,13 @@ public class OrderHistoryEventConsumer {
   public void handleOrderCancelledEvent(DomainEventEnvelope<OrderCancelledEvent> domainEventEnvelope) {
     OrderCancelledEvent orderRejectedEvent = domainEventEnvelope.getEvent();
     orderHistoryViewService.cancelOrder(orderRejectedEvent.orderDetails().customerId(),
+            Long.parseLong(domainEventEnvelope.getAggregateId()));
+  }
+
+  @EventuateDomainEventHandler(subscriberId = "customerHistoryServiceEvents", channel = "io.eventuate.examples.tram.ordersandcustomers.orders.domain.Order")
+  public void orderShippedEventHandler(DomainEventEnvelope<OrderShippedEvent> domainEventEnvelope) {
+    OrderShippedEvent event = domainEventEnvelope.getEvent();
+    orderHistoryViewService.shipOrder(event.orderDetails().customerId(),
             Long.parseLong(domainEventEnvelope.getAggregateId()));
   }
 }

@@ -57,4 +57,12 @@ public class OrderHistoryViewService {
   public void cancelOrder(Long customerId, long orderId) {
     updateOrderState(customerId, orderId, OrderState.CANCELLED);
   }
+
+  @Retryable(
+          value = { DuplicateKeyException.class },
+          maxAttempts = 4,
+          backoff = @Backoff(delay = 250))
+  public void shipOrder(Long customerId, Long orderId) {
+    updateOrderState(customerId, orderId, OrderState.SHIPPED);
+  }
 }

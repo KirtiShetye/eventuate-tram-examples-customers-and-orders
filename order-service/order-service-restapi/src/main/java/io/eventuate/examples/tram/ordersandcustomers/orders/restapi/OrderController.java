@@ -37,6 +37,12 @@ public class OrderController {
      return makeSuccessfulResponse(order);
   }
 
+  @PostMapping("/orders/{orderId}/ship")
+  public ResponseEntity<GetOrderResponse> shipOrder(@PathVariable Long orderId) {
+    Order order = orderService.shipOrder(orderId);
+    return makeSuccessfulResponse(order);
+  }
+
   private ResponseEntity<GetOrderResponse> makeSuccessfulResponse(Order order) {
     return ResponseEntity.ok(new GetOrderResponse(order.getId(), order.getState(), order.getRejectionReason()));
   }

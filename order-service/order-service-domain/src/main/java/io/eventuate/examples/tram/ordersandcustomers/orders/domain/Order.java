@@ -70,6 +70,13 @@ public class Order {
     }
   }
 
+  public void ship() {
+    if (this.state != OrderState.APPROVED) {
+      throw new IllegalStateException("Order must be APPROVED to ship");
+    }
+    this.state = OrderState.SHIPPED;
+  }
+
   public RejectionReason getRejectionReason() {
     return rejectionReason;
   }

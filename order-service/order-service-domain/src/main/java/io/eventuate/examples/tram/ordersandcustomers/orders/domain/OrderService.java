@@ -51,6 +51,16 @@ public class OrderService {
     return order;
   }
 
+  @Transactional
+  public Order shipOrder(Long orderId) {
+    Order order = orderRepository
+            .findById(orderId)
+            .orElseThrow(() -> new IllegalArgumentException("order with id %s not found".formatted(orderId)));
+    order.ship();
+    orderEventPublisher.publish(order, new OrderShippedEvent(order.getOrderDetails()));
+    return order;
+  }
+
   public Optional<Order> findById(long orderId) {
     return orderRepository.findById(orderId);
   }
