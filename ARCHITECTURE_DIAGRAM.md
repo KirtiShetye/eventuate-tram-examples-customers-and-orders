@@ -23,6 +23,8 @@
            ▼                     ▼                     ▼
 ```
 
+**Note:** This implementation uses a **shared MySQL database** for simplicity. In production microservices, each service should have its own database (database-per-service pattern) to ensure loose coupling and independent scalability.
+
 ## Service Layer
 
 ```
@@ -75,32 +77,46 @@
 ## Data Layer
 
 ```
-┌──────────────────────────┐  ┌──────────────────────────┐  ┌──────────────────────────┐
-│   MySQL (Customer DB)    │  │   MySQL (Order DB)       │  │   MongoDB                │
-│   Port: 3306             │  │   Port: 3307             │  │   Port: 27017            │
-├──────────────────────────┤  ├──────────────────────────┤  ├──────────────────────────┤
-│ Tables:                  │  │ Tables:                  │  │ Collections:             │
-│                          │  │                          │  │                          │
-│ Customer                 │  │ orders                   │  │ CustomerView             │
-│ ├─ id (PK)               │  │ ├─ id (PK)               │  │ {                        │
-│ ├─ name                  │  │ ├─ customer_id           │  │   _id: 1,                │
-│ ├─ credit_limit          │  │ ├─ order_total           │  │   name: "Jane",          │
-│ ├─ credit_reservations   │  │ ├─ state                 │  │   creditLimit: 100,      │
-│ └─ version               │  │ ├─ rejection_reason      │  │   orders: {              │
-│                          │  │ └─ version               │  │     "1": {               │
-│ MESSAGE (Outbox)         │  │                          │  │       state: "APPROVED", │
-│ ├─ id (PK)               │  │ MESSAGE (Outbox)         │  │       orderTotal: 50     │
-│ ├─ destination           │  │ ├─ id (PK)               │  │     }                    │
-│ ├─ aggregate_id          │  │ ├─ destination           │  │   }                      │
-│ ├─ event_type            │  │ ├─ aggregate_id          │  │ }                        │
-│ ├─ payload (JSON)        │  │ ├─ event_type            │  │                          │
-│ └─ published (0/1)       │  │ ├─ payload (JSON)        │  │                          │
-│                          │  │ └─ published (0/1)       │  │                          │
-└──────────┬───────────────┘  └──────────┬───────────────┘  └──────────────────────────┘
-           │                              │
-           │ Binlog                       │ Binlog
-           │ Monitoring                   │ Monitoring
-           ▼                              ▼
+┌─────────────────────────────────────────────────────────┐  ┌──────────────────────────┐
+│   MySQL (Shared Database: eventuate)                    │  │   MongoDB                │
+│   Port: 3306                                            │  │   Port: 27017            │
+├─────────────────────────────────────────────────────────┤  ├──────────────────────────┤
+│ Tables:                                                 │  │ Collections:             │
+│                                                         │  │                          │
+│ customer (Customer Service)                             │  │ CustomerView             │
+│ ├─ id (PK)                                              │  │ {                        │
+│ ├─ name                                                 │  │   _id: 1,                │
+│ ├─ credit_limit                                         │  │   name: "Jane",          │
+│ └─ version                                              │  │   creditLimit: 100,      │
+│                                                         │  │   orders: {              │
+│ customer_credit_reservations (Customer Service)         │  │     "1": {               │
+│ ├─ customer_id (FK)                                     │  │       state: "APPROVED", │
+│ ├─ order_id                                             │  │       orderTotal: 50     │
+│ └─ amount                                               │  │     }                    │
+│                                                         │  │   }                      │
+│ orders (Order Service)                                  │  │ }                        │
+│ ├─ id (PK)                                              │  │                          │
+│ ├─ customer_id                                          │  │                          │
+│ ├─ order_total                                          │  │                          │
+│ ├─ state (PENDING/APPROVED/REJECTED/CANCELLED)         │  │                          │
+│ ├─ rejection_reason                                     │  │                          │
+│ └─ version                                              │  │                          │
+│                                                         │  │                          │
+│ message (Shared Outbox - Transactional Outbox Pattern) │  │                          │
+│ ├─ id (PK)                                              │  │                          │
+│ ├─ destination (Kafka topic)                            │  │                          │
+│ ├─ headers (JSON - aggregate_id, event_type, etc.)     │  │                          │
+│ ├─ payload (JSON - event data)                          │  │                          │
+│ ├─ published (0 = pending, 1 = published to Kafka)     │  │                          │
+│ └─ creation_time                                        │  │                          │
+│                                                         │  │                          │
+│ offset_store (CDC Service offset tracking)              │  │                          │
+│ received_messages (Duplicate detection)                 │  │                          │
+│ cdc_monitoring (CDC health monitoring)                  │  │                          │
+└──────────────────────────┬──────────────────────────────┘  └──────────────────────────┘
+                           │
+                           │ Binlog Monitoring
+                           ▼
 ```
 
 ## Messaging Infrastructure
@@ -109,10 +125,10 @@
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                    EVENTUATE CDC SERVICE (Change Data Capture)               │
 │                                                                              │
-│  Pipeline 1: Customer DB          Pipeline 2: Order DB                      │
-│  ├─ Reads MySQL binlog            ├─ Reads MySQL binlog                     │
-│  ├─ Detects MESSAGE inserts       ├─ Detects MESSAGE inserts                │
-│  └─ Publishes to Kafka            └─ Publishes to Kafka                     │
+│  Single Pipeline: Shared MySQL Database                                     │
+│  ├─ Reads MySQL binlog (eventuate database)                                 │
+│  ├─ Detects MESSAGE table inserts                                           │
+│  └─ Publishes to Kafka                                                      │
 │                                                                              │
 │  Technology: Debezium-based CDC                                              │
 └────────────────────────────────────┬────────────────────────────────────────┘
