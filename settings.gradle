@@ -22,3 +22,7 @@ include 'api-gateway-service:api-gateway-service-main'
 
 include 'end-to-end-tests'
 
+
+include 'notification-service:notification-service-domain'
+include 'notification-service:notification-service-event-handling'
+include 'notification-service:notification-service-main'
