@@ -1,5 +1,6 @@
 dependencies {
     implementation project(":notification-service:notification-service-domain")
     implementation "io.eventuate.examples.common:eventuate-examples-common-money-jakarta9:$eventuateCommonExamplesVersion"
-    implementation "io.eventuate.tram.core:eventuate-tram-spring-events"
+    implementation "io.eventuate.tram.core:eventuate-tram-spring-consumer-kafka"
+    implementation "io.eventuate.tram.core:eventuate-tram-spring-events-subscriber-starter"
 }

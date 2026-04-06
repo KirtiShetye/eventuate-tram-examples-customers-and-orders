@@ -6,9 +6,6 @@ dependencies {
     implementation project(":notification-service:notification-service-domain")
     implementation project(":notification-service:notification-service-event-handling")
     
-    implementation "io.eventuate.tram.core:eventuate-tram-spring-consumer-kafka"
-    implementation "io.eventuate.tram.core:eventuate-tram-spring-events"
-    
     implementation "org.springframework.boot:spring-boot-starter-web"
     implementation "org.springframework.boot:spring-boot-starter-actuator"
 }
