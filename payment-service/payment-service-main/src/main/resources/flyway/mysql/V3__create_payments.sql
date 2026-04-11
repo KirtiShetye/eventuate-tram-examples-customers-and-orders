@@ -1,0 +1,8 @@
+CREATE TABLE payments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  order_id BIGINT NOT NULL UNIQUE,
+  amount DECIMAL(19,2) NOT NULL,
+  state VARCHAR(20) NOT NULL,
+  decline_reason VARCHAR(255),
+  version BIGINT
+);

@@ -3,6 +3,7 @@ package io.eventuate.examples.tram.ordersandcustomers.customers.eventhandlers;
 import io.eventuate.examples.tram.ordersandcustomers.customers.domain.CustomerService;
 import io.eventuate.examples.tram.ordersandcustomers.orders.domain.OrderCancelledEvent;
 import io.eventuate.examples.tram.ordersandcustomers.orders.domain.OrderCreatedEvent;
+import io.eventuate.examples.tram.ordersandcustomers.orders.domain.OrderRejectedEvent;
 import io.eventuate.examples.tram.ordersandcustomers.orders.domain.OrderShippedEvent;
 import io.eventuate.tram.events.subscriber.DomainEventEnvelope;
 import io.eventuate.tram.events.subscriber.annotations.EventuateDomainEventHandler;
@@ -27,6 +28,12 @@ public class OrderEventConsumer {
 
   @EventuateDomainEventHandler(subscriberId = "OrderEventConsumer", channel = "io.eventuate.examples.tram.ordersandcustomers.orders.domain.Order")
   public void handleOrderCancelledEvent(DomainEventEnvelope<OrderCancelledEvent> domainEventEnvelope) {
+    customerService.releaseCredit(Long.parseLong(domainEventEnvelope.getAggregateId()), domainEventEnvelope.getEvent().orderDetails().customerId());
+  }
+
+  @EventuateDomainEventHandler(subscriberId = "OrderEventConsumer", channel = "io.eventuate.examples.tram.ordersandcustomers.orders.domain.Order")
+  public void handleOrderRejectedEvent(DomainEventEnvelope<OrderRejectedEvent> domainEventEnvelope) {
+    logger.info("Order rejected, releasing credit for order: {}", domainEventEnvelope.getAggregateId());
     customerService.releaseCredit(Long.parseLong(domainEventEnvelope.getAggregateId()), domainEventEnvelope.getEvent().orderDetails().customerId());
   }
 

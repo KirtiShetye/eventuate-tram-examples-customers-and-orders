@@ -1,0 +1,4 @@
+dependencies {
+  api project(":payment-service:payment-service-domain")
+  implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+}

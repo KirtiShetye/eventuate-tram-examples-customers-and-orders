@@ -1,6 +1,6 @@
-package io.eventuate.examples.tram.ordersandcustomers.orders.eventhandlers;
+package io.eventuate.examples.tram.ordersandcustomers.payments.eventhandlers;
 
-import io.eventuate.examples.tram.ordersandcustomers.orders.domain.OrderService;
+import io.eventuate.examples.tram.ordersandcustomers.payments.domain.PaymentService;
 import io.eventuate.tram.spring.flyway.EventuateTramFlywayMigrationConfiguration;
 import io.eventuate.tram.spring.optimisticlocking.OptimisticLockingDecoratorConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -8,21 +8,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
-
 @Configuration
 @EnableAutoConfiguration
 @Import({OptimisticLockingDecoratorConfiguration.class, EventuateTramFlywayMigrationConfiguration.class})
-public class OrderEventHandlersConfiguration {
+public class PaymentServiceEventHandlerConfiguration {
 
   @Bean
-  public CustomerEventConsumer orderEventConsumer(OrderService orderService) {
-    return new CustomerEventConsumer(orderService);
+  public OrderEventConsumer orderEventConsumer(PaymentService paymentService) {
+    return new OrderEventConsumer(paymentService);
   }
-
-  @Bean
-  public PaymentEventConsumer paymentEventConsumer(OrderService orderService) {
-    return new PaymentEventConsumer(orderService);
-  }
-
-
 }
