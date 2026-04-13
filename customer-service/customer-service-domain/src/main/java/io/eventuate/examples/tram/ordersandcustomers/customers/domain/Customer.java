@@ -61,6 +61,9 @@ public class Customer {
   }
 
   public void reserveCredit(Long orderId, Money orderTotal) {
+    if (creditReservations.containsKey(orderId)) {
+      return; // Already reserved - idempotent
+    }
     if (availableCredit().isGreaterThanOrEqual(orderTotal)) {
       creditReservations.put(orderId, orderTotal);
     } else
