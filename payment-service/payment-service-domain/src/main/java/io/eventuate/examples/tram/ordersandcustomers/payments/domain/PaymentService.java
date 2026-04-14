@@ -19,6 +19,11 @@ public class PaymentService {
       return; // Idempotency
     }
 
+    // Poison message detection for DLQ testing
+    if (amount.getAmount().compareTo(java.math.BigDecimal.valueOf(999.99)) == 0) {
+      throw new IllegalArgumentException("POISON MESSAGE: Test DLQ routing for amount 999.99");
+    }
+
     Payment payment = new Payment(orderId, amount);
 
     // Stub logic: approve if amount < 100

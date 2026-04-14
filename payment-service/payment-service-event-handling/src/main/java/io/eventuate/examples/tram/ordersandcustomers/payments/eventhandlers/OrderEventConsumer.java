@@ -1,5 +1,6 @@
 package io.eventuate.examples.tram.ordersandcustomers.payments.eventhandlers;
 
+import io.eventuate.examples.tram.ordersandcustomers.payments.dlq.DLQPublisher;
 import io.eventuate.examples.tram.ordersandcustomers.payments.domain.OrderApprovedEvent;
 import io.eventuate.examples.tram.ordersandcustomers.payments.domain.OrderCancelledEvent;
 import io.eventuate.examples.tram.ordersandcustomers.payments.domain.PaymentRepository;
@@ -14,10 +15,12 @@ public class OrderEventConsumer {
 
   private final PaymentService paymentService;
   private final PaymentRepository paymentRepository;
+  private final DLQPublisher dlqPublisher;
 
-  public OrderEventConsumer(PaymentService paymentService, PaymentRepository paymentRepository) {
+  public OrderEventConsumer(PaymentService paymentService, PaymentRepository paymentRepository, DLQPublisher dlqPublisher) {
     this.paymentService = paymentService;
     this.paymentRepository = paymentRepository;
+    this.dlqPublisher = dlqPublisher;
   }
 
   @EventuateDomainEventHandler(subscriberId = "PaymentOrderEventConsumer", channel = "io.eventuate.examples.tram.ordersandcustomers.orders.domain.Order")
@@ -25,25 +28,35 @@ public class OrderEventConsumer {
     OrderApprovedEvent event = domainEventEnvelope.getEvent();
     Long orderId = Long.parseLong(domainEventEnvelope.getAggregateId());
     
-    if (paymentRepository.findByOrderId(orderId).isPresent()) {
-      logger.info("Payment already processed for order: {}", orderId);
-      return;
+    try {
+      if (paymentRepository.findByOrderId(orderId).isPresent()) {
+        logger.info("Payment already processed for order: {}", orderId);
+        return;
+      }
+      
+      logger.info("Processing payment for approved order: {}", orderId);
+      paymentService.processPayment(orderId, event.orderTotal());
+    } catch (Exception e) {
+      logger.error("Failed to process payment for order {}: {}", orderId, e.getMessage());
+      dlqPublisher.publishToDLQ("payment-service-dlq", domainEventEnvelope.toString(), e);
     }
-    
-    logger.info("Processing payment for approved order: {}", orderId);
-    paymentService.processPayment(orderId, event.orderTotal());
   }
 
   @EventuateDomainEventHandler(subscriberId = "PaymentOrderEventConsumer", channel = "io.eventuate.examples.tram.ordersandcustomers.orders.domain.Order")
   public void handleOrderCancelledEvent(DomainEventEnvelope<OrderCancelledEvent> domainEventEnvelope) {
     Long orderId = Long.parseLong(domainEventEnvelope.getAggregateId());
     
-    if (paymentRepository.findByOrderId(orderId).isEmpty()) {
-      logger.info("No payment found for cancelled order: {}", orderId);
-      return;
+    try {
+      if (paymentRepository.findByOrderId(orderId).isEmpty()) {
+        logger.info("No payment found for cancelled order: {}", orderId);
+        return;
+      }
+      
+      logger.info("Refunding payment for cancelled order: {}", orderId);
+      paymentService.refundPayment(orderId);
+    } catch (Exception e) {
+      logger.error("Failed to refund payment for order {}: {}", orderId, e.getMessage());
+      dlqPublisher.publishToDLQ("payment-service-dlq", domainEventEnvelope.toString(), e);
     }
-    
-    logger.info("Refunding payment for cancelled order: {}", orderId);
-    paymentService.refundPayment(orderId);
   }
 }

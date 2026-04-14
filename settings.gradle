@@ -32,3 +32,5 @@ include 'payment-service:payment-service-persistence'
 include 'payment-service:payment-service-event-handling'
 include 'payment-service:payment-service-event-publishing'
 include 'payment-service:payment-service-main'
+
+include 'dlq-monitor-service'
